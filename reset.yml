@@ -8,5 +8,10 @@
         state: absent
       with_items:
         - nano
+        - wget
         - httpd
+    - name: Remove files
+      file:
+        dest: /var/www
+        state: absent
 ...

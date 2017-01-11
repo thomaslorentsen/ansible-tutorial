@@ -1,0 +1,41 @@
+---
+- hosts: frontend
+  become: true
+  vars:
+    webserver: httpd
+    welcome:
+      dest: /var/www/html/index.html
+      content: |
+        <html>
+        <title>Ansible</title>
+        <body>
+        <h1>Hello World From Ansible</h1>
+        </body>
+        </html>
+    packages:
+      - nano
+      - wget
+  tasks:
+    - name: Install Server Packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items: "{{ packages }}"
+
+    - name: Install Webserver
+      yum:
+        name: "{{ webserver }}"
+        state: present
+      notify: Start Webserver
+
+    - name: Insert a welcome page
+      copy:
+        dest: "{{ welcome.dest }}"
+        content: "{{ welcome.content }}"
+  handlers:
+    - name: Start Webserver
+      service:
+        name: "{{ webserver }}"
+        state: started
+
+...

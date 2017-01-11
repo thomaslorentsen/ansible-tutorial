@@ -175,7 +175,50 @@ PLAY RECAP *********************************************************************
 frontend-1                 : ok=2    changed=1    unreachable=0    failed=0   
 frontend-2                 : ok=2    changed=1    unreachable=0    failed=0
 ```
+# Variables
+Ansible supports variables to make your scripts more portable.
+We can use the ```vars``` to do this:
+```yaml
+- hosts: frontend
+  become: true
+  vars:
+    webserver: httpd
+    welcome:
+      dest: /var/www/html/index.html
+      content: 'hello world'
+    packages:
+      - nano
+      - wget
+```
+We can use them to install the webserver:
+```yaml
+- name: Install Webserver
+  yum:
+    name: "{{ webserver }}"
+    state: present
+```
+We can also access variables at different levels:
+```yaml
+- name: Insert a welcome page
+  copy:
+    dest: "{{ welcome.dest }}"
+    content: "{{ welcome.content }}"
+```
+We can access an array of variables
+```bash
+- name: Install Server Packages
+    yum:
+        name: "{{ item }}"
+        state: present
+    with_items: "{{ packages }}"
+```
 
+```bash
+ansible-playbook \
+    -i inventory.ini \
+    configure_server.yml
+```
+Now we can view the [hello world page](http://192.168.33.31/) running on our webserver.
 
 
 # Reset The Vagrant Boxes
@@ -184,4 +227,8 @@ After the tutorial we can reset the vagrant boxes back to their original state
 ansible-playbook \
     -i inventory.ini \
     reset.yml
+```
+Or destroy them with:
+```bash
+vagrant destroy
 ```
