@@ -1,0 +1,9 @@
+---
+- hosts: frontend
+  become: true
+  tasks:
+    - name: Install HTTPD
+      yum:
+        name: httpd
+        state: present
+...

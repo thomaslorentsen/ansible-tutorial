@@ -1,0 +1,12 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Remove Packages
+      yum:
+        name: "{{ item }}"
+        state: absent
+      with_items:
+        - nano
+        - httpd
+...

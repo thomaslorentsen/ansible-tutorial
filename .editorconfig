@@ -1,0 +1,6 @@
+# http://EditorConfig.org
+root = true
+
+[*.{yml,ini}]
+end_of_line = lf
+insert_final_newline = true
