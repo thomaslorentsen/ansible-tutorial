@@ -205,12 +205,12 @@ We can also access variables at different levels:
     content: "{{ welcome.content }}"
 ```
 We can access an array of variables
-```bash
+```yaml
 - name: Install Server Packages
-    yum:
-        name: "{{ item }}"
-        state: present
-    with_items: "{{ packages }}"
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ packages }}"
 ```
 
 ```bash
@@ -219,8 +219,8 @@ ansible-playbook \
     configure_server.yml
 ```
 Now we can view the [hello world page](http://192.168.33.31/) running on our webserver.
-
-
+# Ansible Vault
+Explain here how Ansible Vault can be used to keep our configuration secure
 # Reset The Vagrant Boxes
 After the tutorial we can reset the vagrant boxes back to their original state
 ```bash
