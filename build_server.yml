@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: true
+  vars_files:
+    - vars/common.yml
+  roles:
+    - common
+    - httpd
+    - php
+...

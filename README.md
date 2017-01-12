@@ -79,7 +79,7 @@ You can then set the hosts value in your playbook to run all the commands on tho
 You can then run the playbook by specifying the inventory file to use:
 ```bash
 ansible-playbook \
-    -i inventory.ini \
+    -i inventory/inventory.ini \
     hello_world_all.yml
 ```
 ## Vagrant Hosts
@@ -120,7 +120,7 @@ We can install a package on all of our servers by setting hosts to ```all```.
 We can run this example to install a package on all our servers
 ```bash
 ansible-playbook \
-    -i inventory.ini \
+    -i inventory/inventory.ini \
     install_server_software.yml
 ```
 You will then see that the server packages are installed on all the servers.
@@ -156,7 +156,7 @@ We can select groups to run the playbooks in by seeing the host to the group nam
 You can run this with:
 ```bash
 ansible-playbook \
-    -i inventory.ini \
+    -i inventory/inventory.ini \
     install_http_server.yml 
 ```
 You will see that it will only install ```httpd``` on the frontend servers.
@@ -215,17 +215,124 @@ We can access an array of variables
 
 ```bash
 ansible-playbook \
-    -i inventory.ini \
+    -i inventory/inventory.ini \
     configure_server.yml
 ```
 Now we can view the [hello world page](http://192.168.33.31/) running on our webserver.
+## Configuration files
+We can provide configuration by passing a listing of files
+```yaml
+- hosts: all
+  become: true
+  vars_files:
+    - vars/common.yml
+```
+We can now create ```vars/common.yml``` with the following content
+```yaml
+webserver: httpd
+welcome:
+  dest: /var/www/html/index.html
+  content: |
+    <html>
+    <title>Ansible</title>
+    <body>
+    <h1>Hello World From Ansible</h1>
+    </body>
+    </html>
+packages:
+  - nano
+  - wget
+```
+# Handlers
+Handlers enable us to perform operations only on a change.
+```yaml
+handlers:
+  - name: Start Webserver
+    service:
+      name: "{{ webserver }}"
+      enabled: yes
+      state: started
+```
+We can call this handler with ```notify``` with:
+```yaml
+- name: Install Webserver
+  yum:
+    name: "{{ webserver }}"
+    state: present
+  notify: Start Webserver
+```
+When the playbook is completed the handlers will be run if they are needed.
+The handlers will be run once so we can call ```notify``` as many times as we want.
+# Roles
+Roles can be used to organise your playbooks better
+## Playbook structure
+```yaml
+- hosts: all
+  become: true
+  vars_files:
+    - vars/common.yml
+  roles:
+    - common
+    - httpd
+    - php
+```
+We can now structure our project like below:
+```
+root
+├── build_server.yml
+├── inventory
+│   └── inventory.ini
+├── reset.yml
+├── roles
+│   ├── common
+│   │   └── tasks
+│   │       └── main.yml
+│   ├── httpd
+│   │   ├── tasks
+│   │   │   └── main.yml
+│   │   └── handlers
+│   │       └── main.yml
+│   └── php
+│       └── tasks
+│           └── main.yml
+└── vars
+    └── common.yml
+```
+In our ```roles/common/httpd/tasks/main.yml``` we can add tasks only related to httpd.
+We would structure our ```main.yml``` like below:
+```yaml
+- name: Install Webserver
+  yum:
+    name: "{{ webserver }}"
+    state: present
+  notify: Start Webserver
+
+- name: Insert a welcome page
+  copy:
+    dest: "{{ welcome.dest }}"
+    content: "{{ welcome.content }}"
+```
+We can then update the handler in ```roles/common/httpd/handlers/main.yml``` with:
+```yaml
+- name: Start Webserver
+  service:
+    name: "{{ webserver }}"
+    state: started
+```
+We can then run the ansible playbook
+```bash
+ansible-playbook \                                                                                                                                13:03:26  ☁  master ☂ ➜ ⚡ ✚
+    -i inventory/inventory.ini \
+    build_server.yml
+```
+Our playbook will run each role and we can reuse those roles in other playbooks.
 # Ansible Vault
 Explain here how Ansible Vault can be used to keep our configuration secure
 # Reset The Vagrant Boxes
 After the tutorial we can reset the vagrant boxes back to their original state
 ```bash
 ansible-playbook \
-    -i inventory.ini \
+    -i inventory/inventory.ini \
     reset.yml
 ```
 Or destroy them with:

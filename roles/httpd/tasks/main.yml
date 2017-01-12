@@ -1,0 +1,10 @@
+- name: Install Webserver
+  yum:
+    name: "{{ webserver }}"
+    state: present
+  notify: Start Webserver
+
+- name: Insert a welcome page
+  copy:
+    dest: "{{ welcome.dest }}"
+    content: "{{ welcome.content }}"

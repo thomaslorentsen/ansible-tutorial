@@ -1,0 +1,13 @@
+webserver: httpd
+welcome:
+  dest: /var/www/html/index.html
+  content: |
+    <html>
+    <title>Ansible</title>
+    <body>
+    <h1>Hello World From Ansible</h1>
+    </body>
+    </html>
+packages:
+  - nano
+  - wget
