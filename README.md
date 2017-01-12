@@ -4,7 +4,7 @@ The Ansible website describes it as:
 
 ## Prerequisites
 ### Installing Ansible on OSX
-First instal pip if you have not already installed it
+First install pip if you have not already installed it
 ```bash
 sudo easy_install pip
 ```
@@ -80,7 +80,7 @@ You can then run the playbook by specifying the inventory file to use:
 ```bash
 ansible-playbook \
     -i inventory/inventory.ini \
-    hello_world_all.yml
+    hello_world_frontend.yml
 ```
 ## Vagrant Hosts
 To use Ansible with Vagrant you need to set ```ansible_user``` and ```ansible_ssh_private_key_file``` in the inventory configuration
@@ -219,7 +219,7 @@ ansible-playbook \
     configure_server.yml
 ```
 Now we can view the [hello world page](http://192.168.33.31/) running on our webserver.
-## Configuration files
+## Including Variables
 We can provide configuration by passing a listing of files
 ```yaml
 - hosts: all
@@ -282,7 +282,6 @@ root
 ├── build_server.yml
 ├── inventory
 │   └── inventory.ini
-├── reset.yml
 ├── roles
 │   ├── common
 │   │   └── tasks

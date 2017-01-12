@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: frontend
   tasks:
     - debug: msg='hello world'
 ...
