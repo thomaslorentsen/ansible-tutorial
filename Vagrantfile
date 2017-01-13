@@ -14,7 +14,7 @@ Vagrant.configure(2) do |config|
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = "centos/7"
 
-  N = 3
+  N = 4
 
   VAGRANT_VM_PROVIDER = "virtualbox"
   ANSIBLE_RAW_SSH_ARGS = []

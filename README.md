@@ -17,12 +17,6 @@ To try the examples of this tutorial please start the vagrant boxes:
 ```bash
 vagrant up
 ```
-Once the vagrant boxes have started test that ssh is running
-```bash
-ssh vagrant@192.168.33.31 -i .vagrant/machines/machine1/virtualbox/private_key exit
-ssh vagrant@192.168.33.32 -i .vagrant/machines/machine2/virtualbox/private_key exit
-ssh vagrant@192.168.33.33 -i .vagrant/machines/machine3/virtualbox/private_key exit
-```
 # Playbooks
 A playbook is Ansibles scripting language for orchestrating and configuring servers.
 ## Running a Playbook
