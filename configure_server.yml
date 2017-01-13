@@ -28,14 +28,14 @@
         state: present
       notify: Start Webserver
 
-    - name: Insert a welcome page
-      copy:
-        dest: "{{ welcome.dest }}"
-        content: "{{ welcome.content }}"
-  handlers:
     - name: Start Webserver
       service:
         name: "{{ webserver }}"
         state: started
+
+    - name: Insert a welcome page
+      copy:
+        dest: "{{ welcome.dest }}"
+        content: "{{ welcome.content }}"
 
 ...
