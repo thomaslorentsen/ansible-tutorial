@@ -1,5 +1,0 @@
-- name: Start Webserver
-  service:
-    name: "{{ webserver }}"
-    enabled: yes
-    state: started

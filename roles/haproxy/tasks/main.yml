@@ -1,0 +1,25 @@
+---
+- name: Install HA Proxy
+  yum:
+    name: haproxy
+    state: present
+  tags:
+    - haproxy
+    - load-balancer
+
+- name: Install HA Proxy Configuration
+  template:
+    src: haproxy.cfg
+    dest: /etc/haproxy/haproxy.cfg
+  tags:
+    - haproxy
+    - load-balancer
+
+- name: Start HA Proxy
+  service:
+    name: haproxy
+    state: started
+  tags:
+    - haproxy
+    - load-balancer
+...

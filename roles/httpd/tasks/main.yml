@@ -1,10 +1,11 @@
-- name: Install Webserver
+- name: Install Web Server
   yum:
-    name: "{{ webserver }}"
+    name: httpd
     state: present
-  notify: Start Webserver
 
-- name: Insert a welcome page
-  copy:
-    dest: "{{ welcome.dest }}"
-    content: "{{ welcome.content }}"
+- name: Start Webserver
+  service:
+    name: httpd
+    enabled: yes
+    state: started
+

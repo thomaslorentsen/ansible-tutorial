@@ -1,0 +1,6 @@
+---
+- name: Install Website
+  template:
+    src: index.php
+    dest: /var/www/html/index.php
+...

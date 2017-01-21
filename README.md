@@ -2,7 +2,11 @@
 The Ansible website describes it as:
 > Ansible is a simple automation language that can perfectly describe an IT application infrastructure
 
+Ansible runs on the client side so there is nothing to install on the systems being managed.
+Ansible only needs SSH access to the machines that you are managing.
 ## Prerequisites
+We will need to [Install Ansible](http://docs.ansible.com/ansible/intro_installation.html) on your machine to use it.
+
 ### Installing Ansible on OSX
 First install pip if you have not already installed it
 ```bash
@@ -12,40 +16,20 @@ Then install the latest version of Ansible
 ```bash
 sudo pip install ansible
 ```
-### Start example vagrant boxes
+### Clone This Repository
+If you want to try these examples for yourself, then clone the repository:
+```bash
+git clone https://github.com/thomaslorentsen/ansible-tutorial.git
+cd ansible-tutorial
+```
+### Start Example Vagrant Boxes
 To try the examples of this tutorial please start the vagrant boxes:
 ```bash
 vagrant up
 ```
-# Playbooks
-A playbook is Ansibles scripting language for orchestrating and configuring servers.
-## Running a Playbook
-A playbook is in a yaml format making it easy to read and understand.
-
-```yaml
-- hosts: localhost
-  tasks:
-    - debug: msg='hello world'
-```
-We can run ```hello_world.yml` playbook with a simple command
+When we are done you can destroy the vagrant boxes with
 ```bash
-ansible-playbook hello_world.yml
-```
-When you run the playbook you will see that it runs all the tasks in the playbook.
-After all the tasks have been completed it will print out a summary of the results.
-```
-PLAY [localhost] ***************************************************************
-
-TASK [setup] *******************************************************************
-ok: [localhost]
-
-TASK [debug] *******************************************************************
-ok: [localhost] => {
-    "msg": "hello world"
-}
-
-PLAY RECAP *********************************************************************
-localhost                  : ok=2    changed=0    unreachable=0    failed=0  
+vagrant destroy
 ```
 # Inventory
 An inventory describes all your servers in your infrastructure.
@@ -53,53 +37,131 @@ An inventory describes all your servers in your infrastructure.
 An inventory is in the ini format which contains a heading to group a list of servers and then their host names:
 ```ini
 [frontend]
-192.168.0.32
-192.168.0.33
-192.168.0.34
+frontend-server-1 ansible_host=192.168.0.32
+frontend-server-2 ansible_host=192.168.0.33
+frontend-server-3 ansible_host=192.168.0.34
 
 [backend]
-backend-server-1
-backend-server-2
+backend-server-1 ansible_host=192.168.33.34 ansible_user=vagrant 
+backend-server-2 ansible_host=192.168.33.35 ansible_user=vagrant
 
 [database]
-database-1 ansible_host=192.168.0.128
+database-1 ansible_host=192.168.33.36
 ```
-You can then set the hosts value in your playbook to run all the commands on those servers:
+# Playbooks
+A playbook is Ansibles scripting language for orchestrating and configuring servers.
+A playbook is in the ```yaml``` format making it easy to read and understand.
+## Running A Playbook
+We can install a webserver with a simple playbook.
 ```yaml
-- hosts: backend
+- hosts: frontend-1
+  become: true
   tasks:
-    - debug: msg='hello world'
+    - name: Install Web Server
+      yum:
+        name: httpd
+        state: present
+    - name: Start Web Server
+      service:
+        name: httpd
+        state: started
 ```
-You can then run the playbook by specifying the inventory file to use:
+You can run this with:
 ```bash
 ansible-playbook \
     -i inventory/inventory.ini \
-    hello_world_frontend.yml
+    install_http_server.yml
 ```
-## Vagrant Hosts
-To use Ansible with Vagrant you need to set ```ansible_user``` and ```ansible_ssh_private_key_file``` in the inventory configuration
-```ini
-[frontend]
-192.168.33.31 ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/machine1/virtualbox/private_key
-192.168.33.32 ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/machine2/virtualbox/private_key
+When you run the playbook you will see that it runs all the tasks in the playbook.
+After all the tasks have been completed it will print out a summary of the results.
 ```
-# Running Playbooks
+PLAY [frontend-1] **************************************************************
+
+TASK [setup] *******************************************************************
+ok: [frontend-1]
+
+TASK [Install Web Server] ***********************************************************
+changed: [frontend-1]
+
+TASK [Start Web Server] ********************************************************
+changed: [frontend-1]
+
+PLAY RECAP *********************************************************************
+frontend-1                 : ok=3    changed=2    unreachable=0    failed=0
+```
+Now we can view the [Apache Welcome Page](http://192.168.33.31/) running on our web server.
+
 ## Sudo
-To perform tasks that requires ```sudo``` you need to pass in the ```become``` option.
+To perform tasks that requires ```sudo``` you need to pass in the ```become``` option in the playbook.
 ```yaml
 - hosts: frontend
   become: true
 ```
+This will run all tasks with ```sudo```
+
 You can run individual tasks with ```sudo``` as well by adding it to the task
 ```yaml
 - hosts: frontend
   tasks:
-    - name: Install Nano
+    - name: Install Web Server
       become: true
       yum:
-        name: nano
-      state: present
+        name: httpd
+      	state: present
 ```
+You can also become a different user using the ```become_user``` option.
+```yaml
+- hosts: frontend
+  tasks:
+    - name: Create Website Directory
+      become: true
+      become_user: apache
+      file:
+        path: /var/www/website
+      	state: directory
+```
+## Roles
+Roles enable us to organise our playbooks.
+
+```bash
+ansible-playbook \
+    -i inventory/inventory.ini \
+    build_website.yml
+```
+
+
+## Running On Multiple Hosts
+Pearl expects her website to be in very high demand.
+So she would like her website to be installed on three webservers.
+```yaml
+
+```
+A load balancer will be set up on a forth server.
+```yaml
+- name: Install HA Proxy
+  yum:
+    name: haproxy
+    state: present
+
+- name: Install HA Proxy Configuration
+  template:
+    src: haproxy.cfg
+    dest: /etc/haproxy/haproxy.cfg
+
+- name: Start HA Proxy
+  service:
+    name: haproxy
+    state: started
+```
+
+We can now configure three webservers and a load balancer:
+```bash
+ansible-playbook \
+    -i inventory/inventory.ini \
+    load_balanced_website.yml
+```
+Now [Pearls Website](http://192.168.33.34/) from our load balancer.
+There is no chance of her website falling over when there is high demand!
 ## Running On All Hosts 
 We can install a package on all of our servers by setting hosts to ```all```.
 ```yaml

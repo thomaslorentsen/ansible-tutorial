@@ -1,6 +1,12 @@
 # http://EditorConfig.org
 root = true
 
-[*.{yml,ini}]
+[*]
 end_of_line = lf
+
+[*.{yml,ini}]
 insert_final_newline = true
+
+[*.md]
+insert_final_newline = true
+trim_trailing_whitespace = true

@@ -1,0 +1,15 @@
+---
+- name: Install PHP
+  yum:
+    name: php
+    state: present
+  notify:
+    - Restart Web Server
+
+- name: Install PHP Common
+  yum:
+    name: php-common
+    state: present
+  notify:
+    - Restart Web Server
+...
