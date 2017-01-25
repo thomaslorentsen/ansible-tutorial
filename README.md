@@ -31,8 +31,6 @@ When we are done you can destroy the vagrant boxes with
 ```bash
 vagrant destroy
 ```
-# Demo Background
-In this demo we are going to do what most developers do and build a website for our cat
 # Inventory
 An inventory describes all your servers in your infrastructure.
 ## Creating an inventory
@@ -50,10 +48,12 @@ backend-server-2 ansible_host=192.168.33.35 ansible_user=vagrant
 [docker]
 docker-1 ansible_host=192.168.33.36
 ```
+# Demo Background
+In this demo we are going to do what most developers do and build a website for our cat
 # Playbooks
 A playbook is Ansibles scripting language for orchestrating and configuring servers.
 A playbook is in the ```yaml``` format making it easy to read and understand.
-## Running A Playbook
+### Running A Playbook
 We can install a webserver with a simple playbook.
 ```yaml
 - hosts: frontend-1
@@ -68,6 +68,8 @@ We can install a webserver with a simple playbook.
         name: httpd
         state: started
 ```
+Pearl wants a webserver installed
+
 You can run this with:
 ```bash
 ansible-playbook \
@@ -122,9 +124,51 @@ You can also become a different user using the ```become_user``` option.
       	state: directory
 ```
 ## Handlers
+Handlers enable us to perform operations only on a change.
+```yaml
+  handlers:
+    - name: Restart Web Server
+      service:
+        name: httpd
+        state: restarted
+```
+We can call this handler with ```notify``` with:
+```yaml
+  tasks:
+    - name: Install PHP
+      yum:
+        name: php
+        state: present
+      notify:
+        - Restart Web Server
+```
+Pearl is wants PHP to be installed on her web server.
 
+We can run the playbook to install PHP on our webserver.
+```bash
+ansible-playbook \
+    -i inventory/inventory.ini \
+    install_php.yml
+```
+We can see that PHP is installed and then our webserver has been restarted.
+```
+PLAY [frontend-1] **************************************************************
 
-## Roles
+TASK [setup] *******************************************************************
+ok: [frontend-1]
+
+TASK [Install PHP] *************************************************************
+changed: [frontend-1]
+
+RUNNING HANDLER [Restart Web Server] *******************************************
+changed: [frontend-1]
+
+PLAY RECAP *********************************************************************
+frontend-1                 : ok=3    changed=2    unreachable=0    failed=0
+```
+When the playbook is completed the handlers will be run if they are needed.
+The handlers will be run once so we can call ```notify``` as many times as we want.
+# Roles
 Roles enable us to organise our playbooks.
 
 We can now structure our project like below:
@@ -137,7 +181,9 @@ root
 │   │   └── tasks
 │   │       └── main.yml
 │   ├── php
-│   │   └── tasks
+│   │   ├── tasks
+│   │   │   └── main.yml
+│   │   └── handlers
 │   │       └── main.yml
 │   └── website
 │       └── tasks
@@ -153,14 +199,58 @@ Now we can call each role from my playbook
     - php
     - website
 ```
+We can now structure tasks in each roles like:
+```yaml
+- name: Install Web Server
+  yum:
+    name: httpd
+    state: present
+
+- name: Start Webserver
+  service:
+    name: httpd
+    enabled: yes
+    state: started
+```
 When we run the playbook, the tasks in each role is run
 ```bash
 ansible-playbook \
     -i inventory/inventory.ini \
     build_website.yml
 ```
-We can now easily reuse these roles.
-## Running On Multiple Hosts
+We can also see the role name in the output
+```
+PLAY [frontend-1] **************************************************************
+
+TASK [setup] *******************************************************************
+ok: [frontend-1]
+
+TASK [httpd : Install Web Server] **********************************************
+ok: [frontend-1]
+
+TASK [httpd : Start Webserver] *************************************************
+changed: [frontend-1]
+
+TASK [php : Install PHP] *******************************************************
+ok: [frontend-1]
+
+TASK [php : Install PHP Common] ************************************************
+ok: [frontend-1]
+
+TASK [website : Install Website] ***********************************************
+changed: [frontend-1]
+
+TASK [website : stat] **********************************************************
+ok: [frontend-1]
+
+TASK [website : Install Predis Library] ****************************************
+changed: [frontend-1]
+
+PLAY RECAP *********************************************************************
+frontend-1                 : ok=8    changed=3    unreachable=0    failed=0 
+```
+We can easily reuse these roles.
+# Running On Multiple Hosts
 Pearl expects her website to be in very high demand.
 So she would like her website to be installed on three webservers.
 ```yaml
@@ -194,27 +284,105 @@ ansible-playbook \
     -i inventory/inventory.ini \
     load_balanced_website.yml
 ```
+We can see from the output that we are managing all our webservers concurrently
+```
+PLAY [frontend] ****************************************************************
+
+TASK [setup] *******************************************************************
+ok: [frontend-3]
+ok: [frontend-1]
+ok: [frontend-2]
+
+TASK [httpd : Install Web Server] **********************************************
+ok: [frontend-1]
+changed: [frontend-2]
+changed: [frontend-3]
+
+TASK [httpd : Start Webserver] *************************************************
+ok: [frontend-1]
+changed: [frontend-3]
+changed: [frontend-2]
+
+TASK [php : Install PHP] *******************************************************
+ok: [frontend-1]
+changed: [frontend-2]
+changed: [frontend-3]
+
+TASK [php : Install PHP Common] ************************************************
+ok: [frontend-1]
+ok: [frontend-2]
+ok: [frontend-3]
+
+TASK [website : Install Website] ***********************************************
+ok: [frontend-1]
+changed: [frontend-3]
+changed: [frontend-2]
+
+TASK [website : stat] **********************************************************
+ok: [frontend-1]
+ok: [frontend-2]
+ok: [frontend-3]
+
+TASK [website : Install Predis Library] ****************************************
+skipping: [frontend-1]
+changed: [frontend-2]
+changed: [frontend-3]
+
+RUNNING HANDLER [php : Restart Web Server] *************************************
+changed: [frontend-2]
+changed: [frontend-3]
+
+PLAY [load-balancer] ***********************************************************
+
+TASK [setup] *******************************************************************
+ok: [load-balancer-1]
+
+TASK [haproxy : Install HA Proxy] **********************************************
+changed: [load-balancer-1]
+
+TASK [haproxy : Install HA Proxy Configuration] ********************************
+changed: [load-balancer-1]
+
+TASK [haproxy : Start HA Proxy] ************************************************
+changed: [load-balancer-1]
+
+PLAY RECAP *********************************************************************
+frontend-1                 : ok=7    changed=0    unreachable=0    failed=0   
+frontend-2                 : ok=9    changed=6    unreachable=0    failed=0   
+frontend-3                 : ok=9    changed=6    unreachable=0    failed=0   
+load-balancer-1            : ok=4    changed=3    unreachable=0    failed=0
+```
 Now [Pearls Website](http://192.168.33.34/) from our load balancer.
 There is no chance of her website falling over when there is high demand!
 # Docker
-To demonstrate how Ansible will help us with micro services we will install a Redis running in docker.
+To demonstrate how Ansible will help us with micro services we will use Docker.
 
+Pearl will need Redis to keep track of her visitors so we set up a Redis instance on a new server.
 
+Our role would include this task:
 ```yaml
 - name: Create Redis Container
   docker_container:
     name: redis
     image: redis
     command: redis-server --appendonly yes
-    state: present
+    state: started
     exposed_ports:
       - 6379
     volumes:
       - /redisdata
 ```
-We can use Ansible Galaxy to help us be DRY
+For this example we need to use Ansible Galaxy to help us be DRY
 ```bash
 ansible-galaxy install geerlingguy.repo-epel
+```
+Our playbook looks like this
+```yaml
+- hosts: docker
+  become: true
+  roles:
+    - geerlingguy.repo-epel
+    - docker
 ```
 When the playbook is run docker will be installed
 ```bash
@@ -222,172 +390,40 @@ ansible-playbook \
     -i inventory/inventory.ini \
     docker.yml
 ```
+We can see the docker container being started.
+```
+PLAY [docker] ******************************************************************
 
+TASK [setup] *******************************************************************
+ok: [docker-1]
 
+TASK [geerlingguy.repo-epel : Check if EPEL repo is already configured.] *******
+ok: [docker-1]
 
+TASK [geerlingguy.repo-epel : Install EPEL repo.] ******************************
+changed: [docker-1]
 
+TASK [geerlingguy.repo-epel : Import EPEL GPG key.] ****************************
+changed: [docker-1]
 
+TASK [docker : Install Docker] *************************************************
+changed: [docker-1]
 
-# Variables
-Ansible supports variables to make your scripts more portable.
-We can use the ```vars``` to do this:
-```yaml
-- hosts: frontend
-  become: true
-  vars:
-    webserver: httpd
-    welcome:
-      dest: /var/www/html/index.html
-      content: 'hello world'
-    packages:
-      - nano
-      - wget
-```
-We can use them to install the webserver:
-```yaml
-- name: Install Webserver
-  yum:
-    name: "{{ webserver }}"
-    state: present
-```
-We can also access variables at different levels:
-```yaml
-- name: Insert a welcome page
-  copy:
-    dest: "{{ welcome.dest }}"
-    content: "{{ welcome.content }}"
-```
-We can access an array of variables
-```yaml
-- name: Install Server Packages
-  yum:
-    name: "{{ item }}"
-    state: present
-  with_items: "{{ packages }}"
-```
+TASK [docker : Start Docker] ***************************************************
+changed: [docker-1]
 
-```bash
-ansible-playbook \
-    -i inventory/inventory.ini \
-    configure_server.yml
-```
-Now we can view the [hello world page](http://192.168.33.31/) running on our webserver.
-## Including Variables
-We can provide configuration by passing a listing of files
-```yaml
-- hosts: all
-  become: true
-  vars_files:
-    - vars/common.yml
-```
-We can now create ```vars/common.yml``` with the following content
-```yaml
-webserver: httpd
-welcome:
-  dest: /var/www/html/index.html
-  content: |
-    <html>
-    <title>Ansible</title>
-    <body>
-    <h1>Hello World From Ansible</h1>
-    </body>
-    </html>
-packages:
-  - nano
-  - wget
-```
-# Handlers
-Handlers enable us to perform operations only on a change.
-```yaml
-handlers:
-  - name: Start Webserver
-    service:
-      name: "{{ webserver }}"
-      enabled: yes
-      state: started
-```
-We can call this handler with ```notify``` with:
-```yaml
-- name: Install Webserver
-  yum:
-    name: "{{ webserver }}"
-    state: present
-  notify: Start Webserver
-```
-When the playbook is completed the handlers will be run if they are needed.
-The handlers will be run once so we can call ```notify``` as many times as we want.
-# Roles
-Roles can be used to organise your playbooks better
-## Playbook structure
-```yaml
-- hosts: all
-  become: true
-  vars_files:
-    - vars/common.yml
-  roles:
-    - common
-    - httpd
-    - php
-```
-We can now structure our project like below:
-```
-root
-├── build_server.yml
-├── inventory
-│   └── inventory.ini
-├── roles
-│   ├── common
-│   │   └── tasks
-│   │       └── main.yml
-│   ├── httpd
-│   │   ├── tasks
-│   │   │   └── main.yml
-│   │   └── handlers
-│   │       └── main.yml
-│   └── php
-│       └── tasks
-│           └── main.yml
-└── vars
-    └── common.yml
-```
-In our ```roles/common/httpd/tasks/main.yml``` we can add tasks only related to httpd.
-We would structure our ```main.yml``` like below:
-```yaml
-- name: Install Webserver
-  yum:
-    name: "{{ webserver }}"
-    state: present
-  notify: Start Webserver
+TASK [docker : stat] ***********************************************************
+ok: [docker-1]
 
-- name: Insert a welcome page
-  copy:
-    dest: "{{ welcome.dest }}"
-    content: "{{ welcome.content }}"
-```
-We can then update the handler in ```roles/common/httpd/handlers/main.yml``` with:
-```yaml
-- name: Start Webserver
-  service:
-    name: "{{ webserver }}"
-    state: started
-```
-We can then run the ansible playbook
-```bash
-ansible-playbook \                                                                                                                                13:03:26  ☁  master ☂ ➜ ⚡ ✚
-    -i inventory/inventory.ini \
-    build_server.yml
-```
-Our playbook will run each role and we can reuse those roles in other playbooks.
-# Ansible Vault
-Explain here how Ansible Vault can be used to keep our configuration secure
-# Reset The Vagrant Boxes
-After the tutorial we can reset the vagrant boxes back to their original state
-```bash
-ansible-playbook \
-    -i inventory/inventory.ini \
-    reset.yml
-```
-Or destroy them with:
-```bash
-vagrant destroy
+TASK [docker : Install Pip] ****************************************************
+changed: [docker-1]
+
+TASK [docker : Install Python Docker] ******************************************
+changed: [docker-1]
+
+TASK [docker : Create Redis Container] *****************************************
+changed: [docker-1]
+
+PLAY RECAP *********************************************************************
+docker-1                   : ok=10   changed=7    unreachable=0    failed=0
 ```

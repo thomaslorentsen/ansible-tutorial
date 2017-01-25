@@ -1,0 +1,16 @@
+---
+- hosts: frontend-1
+  become: true
+  tasks:
+    - name: Install PHP
+      yum:
+        name: php
+        state: present
+      notify:
+        - Restart Web Server
+  handlers:
+    - name: Restart Web Server
+      service:
+        name: httpd
+        state: restarted
+...
