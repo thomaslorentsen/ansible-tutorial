@@ -1,0 +1,53 @@
+---
+- name: Install Docker
+  yum:
+    name: docker
+    state: present
+  tags:
+    - docker
+
+- name: Start Docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  tags:
+    - docker
+
+- stat:
+    path: /usr/lib/python2.7/site-packages/docker
+  register: python_docker
+  tags:
+    - docker
+
+- name: Install Pip
+  yum:
+    name: python-pip
+    state: present
+  when: python_docker.stat.isdir is not defined
+  tags:
+    - docker
+
+- name: Install Python Docker
+  pip:
+    name: docker-py
+    state: present
+  when: python_docker.stat.isdir is not defined
+  tags:
+    - docker
+
+- name: Create Redis Container
+  docker_container:
+    name: redis
+    image: redis
+    command: redis-server --appendonly yes
+    network_mode: host
+    log_driver: json-file
+    state: started
+    exposed_ports:
+      - 6379
+    volumes:
+      - /redisdata
+  tags:
+    - docker
+...

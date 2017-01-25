@@ -2,7 +2,8 @@
 # vi: set ft=ruby :
 
 Vagrant.configure(2) do |config|
-  config.vm.box = "centos/7"
+  config.vm.box = "boxcutter/centos72"
+  config.vm.box_version = "2.0.16"
 
   N = 5
 

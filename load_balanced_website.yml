@@ -1,4 +1,11 @@
 ---
+- hosts: frontend
+  become: true
+  roles:
+    - httpd
+    - php
+    - website
+
 - hosts: load-balancer
   become: true
   roles:

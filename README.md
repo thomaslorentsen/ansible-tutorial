@@ -5,7 +5,7 @@ The Ansible website describes it as:
 Ansible runs on the client side so there is nothing to install on the systems being managed.
 Ansible only needs SSH access to the machines that you are managing.
 ## Prerequisites
-We will need to [Install Ansible](http://docs.ansible.com/ansible/intro_installation.html) on your machine to use it.
+We will need to [install Ansible](http://docs.ansible.com/ansible/intro_installation.html) on your machine to use it.
 
 ### Installing Ansible on OSX
 First install pip if you have not already installed it
@@ -31,10 +31,12 @@ When we are done you can destroy the vagrant boxes with
 ```bash
 vagrant destroy
 ```
+# Demo Background
+In this demo we are going to do what most developers do and build a website for our cat
 # Inventory
 An inventory describes all your servers in your infrastructure.
 ## Creating an inventory
-An inventory is in the ini format which contains a heading to group a list of servers and then their host names:
+An inventory is in the ```ini``` format which contains a heading to group a list of servers and then their host names:
 ```ini
 [frontend]
 frontend-server-1 ansible_host=192.168.0.32
@@ -45,8 +47,8 @@ frontend-server-3 ansible_host=192.168.0.34
 backend-server-1 ansible_host=192.168.33.34 ansible_user=vagrant 
 backend-server-2 ansible_host=192.168.33.35 ansible_user=vagrant
 
-[database]
-database-1 ansible_host=192.168.33.36
+[docker]
+docker-1 ansible_host=192.168.33.36
 ```
 # Playbooks
 A playbook is Ansibles scripting language for orchestrating and configuring servers.
@@ -90,7 +92,6 @@ PLAY RECAP *********************************************************************
 frontend-1                 : ok=3    changed=2    unreachable=0    failed=0
 ```
 Now we can view the [Apache Welcome Page](http://192.168.33.31/) running on our web server.
-
 ## Sudo
 To perform tasks that requires ```sudo``` you need to pass in the ```become``` option in the playbook.
 ```yaml
@@ -120,21 +121,55 @@ You can also become a different user using the ```become_user``` option.
         path: /var/www/website
       	state: directory
 ```
+## Handlers
+
+
 ## Roles
 Roles enable us to organise our playbooks.
 
+We can now structure our project like below:
+```
+root
+├── inventory
+│   └── inventory.ini
+├── roles
+│   ├── httpd
+│   │   └── tasks
+│   │       └── main.yml
+│   ├── php
+│   │   └── tasks
+│   │       └── main.yml
+│   └── website
+│       └── tasks
+│           └── main.yml
+└── build_website.yml
+```
+Now we can call each role from my playbook
+```yaml
+- hosts: frontend-1
+  become: true
+  roles:
+    - httpd
+    - php
+    - website
+```
+When we run the playbook, the tasks in each role is run
 ```bash
 ansible-playbook \
     -i inventory/inventory.ini \
     build_website.yml
 ```
-
-
+We can now easily reuse these roles.
 ## Running On Multiple Hosts
 Pearl expects her website to be in very high demand.
 So she would like her website to be installed on three webservers.
 ```yaml
-
+- hosts: frontend
+  become: true
+  roles:
+    - httpd
+    - php
+    - website
 ```
 A load balancer will be set up on a forth server.
 ```yaml
@@ -153,7 +188,6 @@ A load balancer will be set up on a forth server.
     name: haproxy
     state: started
 ```
-
 We can now configure three webservers and a load balancer:
 ```bash
 ansible-playbook \
@@ -162,75 +196,38 @@ ansible-playbook \
 ```
 Now [Pearls Website](http://192.168.33.34/) from our load balancer.
 There is no chance of her website falling over when there is high demand!
-## Running On All Hosts 
-We can install a package on all of our servers by setting hosts to ```all```.
+# Docker
+To demonstrate how Ansible will help us with micro services we will install a Redis running in docker.
+
+
 ```yaml
-- hosts: all
-  become: true
-  tasks:
-    - name: Install Nano
-      yum:
-        name: nano
-        state: present
+- name: Create Redis Container
+  docker_container:
+    name: redis
+    image: redis
+    command: redis-server --appendonly yes
+    state: present
+    exposed_ports:
+      - 6379
+    volumes:
+      - /redisdata
 ```
-We can run this example to install a package on all our servers
+We can use Ansible Galaxy to help us be DRY
+```bash
+ansible-galaxy install geerlingguy.repo-epel
+```
+When the playbook is run docker will be installed
 ```bash
 ansible-playbook \
     -i inventory/inventory.ini \
-    install_server_software.yml
+    docker.yml
 ```
-You will then see that the server packages are installed on all the servers.
-```
-PLAY [all] *********************************************************************
 
-TASK [setup] *******************************************************************
-ok: [frontend-2]
-ok: [backend-1]
-ok: [frontend-1]
 
-TASK [Install Nano] ************************************************************
-changed: [frontend-1]
-changed: [backend-1]
-changed: [frontend-2]
 
-PLAY RECAP *********************************************************************
-backend-1                  : ok=2    changed=1    unreachable=0    failed=0   
-frontend-1                 : ok=2    changed=1    unreachable=0    failed=0   
-frontend-2                 : ok=2    changed=1    unreachable=0    failed=0
-```
-## Running Playbooks On Some Servers
-We can select groups to run the playbooks in by seeing the host to the group name.
-```yaml
-- hosts: frontend
-  become: true
-  tasks:
-    - name: Install HTTPD
-      yum:
-        name: httpd
-        state: present
-```
-You can run this with:
-```bash
-ansible-playbook \
-    -i inventory/inventory.ini \
-    install_http_server.yml 
-```
-You will see that it will only install ```httpd``` on the frontend servers.
-```
-PLAY [frontend] ****************************************************************
 
-TASK [setup] *******************************************************************
-ok: [frontend-2]
-ok: [frontend-1]
 
-TASK [Install HTTPD] ***********************************************************
-changed: [frontend-1]
-changed: [frontend-2]
 
-PLAY RECAP *********************************************************************
-frontend-1                 : ok=2    changed=1    unreachable=0    failed=0   
-frontend-2                 : ok=2    changed=1    unreachable=0    failed=0
-```
 # Variables
 Ansible supports variables to make your scripts more portable.
 We can use the ```vars``` to do this:

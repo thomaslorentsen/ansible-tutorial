@@ -1,0 +1,7 @@
+---
+- hosts: docker
+  become: true
+  roles:
+    - geerlingguy.repo-epel
+    - docker
+...

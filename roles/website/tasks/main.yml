@@ -3,4 +3,15 @@
   template:
     src: index.php
     dest: /var/www/html/index.php
+
+- stat:
+    path: /var/www/html/predis-1.1.1/src
+  register: predis
+
+- name: Install Predis Library
+  unarchive:
+    src: https://github.com/nrk/predis/archive/v1.1.1.tar.gz
+    dest: /var/www/html/
+    remote_src: true
+  when: predis.stat.isdir is not defined
 ...
