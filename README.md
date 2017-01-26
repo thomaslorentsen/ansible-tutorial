@@ -430,6 +430,9 @@ changed: [docker-1]
 PLAY RECAP *********************************************************************
 docker-1                   : ok=10   changed=7    unreachable=0    failed=0
 ```
+
+![Pearl is much happier now](https://d1x0mwiac2rqwt.cloudfront.net/g4DdheJH_iyLbjkvjpJkP3GC2i20gSAgYMwAcQdHSIi8ql2nUhHSgwwvkqjEH3cx/by/2943370/as/pearl_happy.jpg)
+
 # What Else Can Ansible Do?
 What else could we do with Ansible?
 ## Configuration Management
