@@ -48,7 +48,6 @@ try {
         <div class="form-group">
             <label for="exampleInputName">Pet's Name</label>
             <input type="text" class="form-control" id="exampleInputName" placeholder="">
-            <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
         </div>
         <div class="form-group">
             <label for="exampleTextarea">Pet's Address</label>
@@ -80,13 +79,6 @@ try {
         We will be taking orders once we have Micro Services!
     </div>
 <?php } ?>
-
-<pre>
-<?php
-// var_dump($_SERVER);
-?>
-</pre>
-
 </div>
 </body>
 </html>

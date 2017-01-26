@@ -352,7 +352,7 @@ frontend-2                 : ok=9    changed=6    unreachable=0    failed=0
 frontend-3                 : ok=9    changed=6    unreachable=0    failed=0   
 load-balancer-1            : ok=4    changed=3    unreachable=0    failed=0
 ```
-Now [Pearls Website](http://192.168.33.34/) from our load balancer.
+Now we can view [Pearls Website](http://192.168.33.34/) from our load balancer.
 There is no chance of her website falling over when there is high demand!
 # Docker
 To demonstrate how Ansible will help us with micro services we will use Docker.
@@ -427,3 +427,37 @@ changed: [docker-1]
 PLAY RECAP *********************************************************************
 docker-1                   : ok=10   changed=7    unreachable=0    failed=0
 ```
+# What Else Can Ansible Do?
+What else could we do with Ansible?
+## Configuration Management
+We can insert configuration as a block
+```yaml
+- name: insert/update "Match User" configuration block in /etc/ssh/sshd_config
+  blockinfile:
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    dest: /etc/ssh/sshd_config
+    block: |
+      Match User ansible-agent
+      PasswordAuthentication no
+```
+Which would appear as
+```
+# BEGIN ANSIBLE MANAGED BLOCK
+Match User ansible-agent
+PasswordAuthentication no
+# END ANSIBLE MANAGED BLOCK
+```
+Then we can remove it with
+```yaml
+- name: insert/update "Match User" configuration block in /etc/ssh/sshd_config
+  blockinfile:
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    dest: /etc/ssh/sshd_config
+    state: absent
+```
+## Upgrading or Replacing Packages
+We can automate the process of upgrading or replacing packages running on our servers with minimal site outages.
+## Testable
+We can test our Ansible scripts before running them on production
+## Auditing and Documentation
+Ansible provides a clear way of documenting our systems.
