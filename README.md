@@ -51,8 +51,6 @@ docker-1 ansible_host=192.168.33.36
 # Demo Background
 In this demo we are going to do what most developers do and build a website for our cat
 
-![Pearl is fed up with trying to build a website](https://d1x0mwiac2rqwt.cloudfront.net/3FDv1kEze40Z7fECUFOyLkw8WAnxT_oNEmL3IBDnvF2tamgPPP5DXwZ7sFijEUMX/by/2943370/as/pearl_given_up.jpg)
-
 # Playbooks
 A playbook is Ansibles scripting language for orchestrating and configuring servers.
 A playbook is in the ```yaml``` format making it easy to read and understand.
@@ -430,8 +428,6 @@ changed: [docker-1]
 PLAY RECAP *********************************************************************
 docker-1                   : ok=10   changed=7    unreachable=0    failed=0
 ```
-
-![Pearl is much happier now](https://d1x0mwiac2rqwt.cloudfront.net/g4DdheJH_iyLbjkvjpJkP3GC2i20gSAgYMwAcQdHSIi8ql2nUhHSgwwvkqjEH3cx/by/2943370/as/pearl_happy.jpg)
 
 # What Else Can Ansible Do?
 What else could we do with Ansible?
